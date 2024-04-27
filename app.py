@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import ttk
 from ftplib import FTP
 import tkinter.messagebox
+import tkinter.filedialog
+import os
 
 class FTPClient:
     def __init__(self, host, port, username, password):
@@ -18,9 +20,8 @@ class FTPClient:
     def get_current_directory(self):
         return self.ftp.pwd()
 
-    def download_file(self, filename, local_filename=None):
-        if local_filename is None:
-            local_filename = filename
+    def download_file(self, filename, download_dir):
+        local_filename = os.path.join(download_dir, filename)  # Создание полного пути к файлу на локальном компьютере
 
         with open(local_filename, 'wb') as f:
             self.ftp.retrbinary('RETR ' + filename, f.write)
@@ -58,6 +59,9 @@ class MainWindow(tk.Tk):
         # Создание кнопки "Назад"
         self.back_button = ttk.Button(self, text="Назад", command=self.go_back)
         self.back_button.pack(side=tk.LEFT)
+
+        self.download_button = ttk.Button(self, text="Скачать", command=self.download_file)
+        self.download_button.pack(side=tk.LEFT)
 
         # Создание кнопки "Редактировать соединение"
         self.edit_connection_button = ttk.Button(self, text="Редактировать соединение", command=self.edit_connection)
@@ -97,6 +101,18 @@ class MainWindow(tk.Tk):
         self.ftp_client.close()
         self.destroy()
         login_window = LoginWindow(self.master)
+
+    def download_file(self):
+        selected_item = self.tree.selection()[0]  # Получение выбранного элемента
+        filename = self.tree.item(selected_item)['text']  # Получение имени файла
+        download_dir = tkinter.filedialog.askdirectory()  # Открытие диалога выбора директории
+        if download_dir:  # Если пользователь выбрал директорию
+            try:
+                self.ftp_client.download_file(filename, download_dir)  # Скачивание файла
+                tkinter.messagebox.showinfo("Download successful", f"File {filename} downloaded successfully")
+            except Exception as e:
+                print(f"Failed to download file: {e}")
+                tkinter.messagebox.showerror("Download Error", f"Failed to download file: {e}")
 
 class LoginWindow(tk.Toplevel):
     def __init__(self, parent):
