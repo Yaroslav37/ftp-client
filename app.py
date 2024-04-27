@@ -44,16 +44,46 @@ class MainWindow(tk.Tk):
 
         self.ftp_client = ftp_client
 
+        # Создание поля ввода для отображения и изменения текущего пути
+        self.path_entry = tk.Entry(self)
+        self.path_entry.pack(side=tk.LEFT)
+
+        # Создание кнопки для перехода по пути
+        self.go_button = ttk.Button(self, text="Перейти", command=self.go_to_directory)
+        self.go_button.pack(side=tk.LEFT)
+
         self.tree = ttk.Treeview(self)
         self.tree.pack(fill=tk.BOTH, expand=1)
 
+        # Создание кнопки "Назад"
+        self.back_button = ttk.Button(self, text="Назад", command=self.go_back)
+        self.back_button.pack(side=tk.LEFT)
+
         self.populate_tree()
 
-    def populate_tree(self):
+    def populate_tree(self, directory=''):
+        self.tree.delete(*self.tree.get_children())  # Очистка дерева
+        self.ftp_client.change_directory(directory)  # Переход в директорию
         files = self.ftp_client.list_files()
 
         for file in files:
-            self.tree.insert('', 'end', text=file)
+            self.tree.insert('', 'end', text=file, values=(file,))
+        
+        # Обновление поля ввода текущего пути
+        self.path_entry.delete(0, tk.END)
+        self.path_entry.insert(0, self.ftp_client.get_current_directory())
+
+    def go_to_directory(self):
+        path = self.path_entry.get()  # Получение пути из поля ввода
+        try:
+            self.ftp_client.change_directory(path)
+            self.populate_tree(path)
+        except:
+            tkinter.messagebox.showinfo("Not a directory", f"{path} is not a directory")
+
+    def go_back(self):
+        self.ftp_client.change_directory('..')  # Переход на уровень вверх
+        self.populate_tree()
 
     def on_close(self):
         self.ftp_client.close()
