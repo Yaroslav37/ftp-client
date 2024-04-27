@@ -59,6 +59,10 @@ class MainWindow(tk.Tk):
         self.back_button = ttk.Button(self, text="Назад", command=self.go_back)
         self.back_button.pack(side=tk.LEFT)
 
+        # Создание кнопки "Редактировать соединение"
+        self.edit_connection_button = ttk.Button(self, text="Редактировать соединение", command=self.edit_connection)
+        self.edit_connection_button.pack(side=tk.LEFT)
+
         self.populate_tree()
 
     def populate_tree(self, directory=''):
@@ -88,6 +92,11 @@ class MainWindow(tk.Tk):
     def on_close(self):
         self.ftp_client.close()
         self.destroy()
+
+    def edit_connection(self):
+        self.ftp_client.close()
+        self.destroy()
+        login_window = LoginWindow(self.master)
 
 class LoginWindow(tk.Toplevel):
     def __init__(self, parent):
@@ -120,6 +129,7 @@ class LoginWindow(tk.Toplevel):
         # Создание кнопки входа
         self.login_button = ttk.Button(self, text="Login", command=self.login)
         self.login_button.grid(row=4, column=0, columnspan=2)
+
 
     def login(self):
         # Получение данных из полей ввода
