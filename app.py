@@ -33,6 +33,9 @@ class FTPClient:
         with open(local_filename, 'rb') as f:
             self.ftp.storbinary('STOR ' + filename, f)
 
+    def create_directory(self, directory_name):
+        self.ftp.mkd(directory_name)
+
     def close(self):
         self.ftp.quit()
 
@@ -66,6 +69,9 @@ class MainWindow(tk.Tk):
         # Создание кнопки "Редактировать соединение"
         self.edit_connection_button = ttk.Button(self, text="Редактировать соединение", command=self.edit_connection)
         self.edit_connection_button.pack(side=tk.LEFT)
+
+        self.create_dir_button = ttk.Button(self, text="Создать папку", command=self.create_directory)
+        self.create_dir_button.pack(side=tk.LEFT)
 
         self.populate_tree()
 
@@ -114,6 +120,17 @@ class MainWindow(tk.Tk):
                 print(f"Failed to download file: {e}")
                 tkinter.messagebox.showerror("Download Error", f"Failed to download file: {e}")
 
+    def create_directory(self):
+        directory_name = tkinter.simpledialog.askstring("Создать папку", "Введите имя папки:")
+        if directory_name:  # Если пользователь ввел имя папки
+            try:
+                self.ftp_client.create_directory(directory_name)  # Создание папки
+                tkinter.messagebox.showinfo("Успех", f"Папка {directory_name} успешно создана")
+                self.populate_tree()  # Обновление дерева файлов
+            except Exception as e:
+                print(f"Failed to create directory: {e}")
+                tkinter.messagebox.showerror("Ошибка", f"Не удалось создать папку: {e}")
+
 class LoginWindow(tk.Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
@@ -125,17 +142,17 @@ class LoginWindow(tk.Toplevel):
         tk.Label(self, text="Host:").grid(row=0, column=0, sticky="e")
         self.host_entry = tk.Entry(self)
         self.host_entry.grid(row=0, column=1)
-        self.host_entry.insert(0, "test.rebex.net")
+        self.host_entry.insert(0, "localhost")
 
         tk.Label(self, text="Username:").grid(row=1, column=0, sticky="e")
         self.username_entry = tk.Entry(self)
         self.username_entry.grid(row=1, column=1)
-        self.username_entry.insert(0, "demo")
+        self.username_entry.insert(0, "minen")
 
         tk.Label(self, text="Password:").grid(row=2, column=0, sticky="e")
         self.password_entry = tk.Entry(self, show="*")
         self.password_entry.grid(row=2, column=1)
-        self.password_entry.insert(0, "password")
+        self.password_entry.insert(0, "e4772381")
 
         tk.Label(self, text="Port:").grid(row=3, column=0, sticky="e")
         self.port_entry = tk.Entry(self)
