@@ -46,6 +46,12 @@ class FTPClient:
         except:
             self.ftp.rmd(name)  # Если не удалось, попытка удалить как директорию
 
+    
+    def list_files_and_dirs(self):
+        files_and_dirs = []
+        self.ftp.retrlines('MLSD', files_and_dirs.append)
+        return files_and_dirs
+
     def close(self):
         self.ftp.quit()
 
@@ -68,6 +74,9 @@ class MainWindow(tk.Tk):
 
         self.tree = ttk.Treeview(self)
         self.tree.pack(fill=tk.BOTH, expand=1)
+
+        self.tree.tag_configure('file', foreground='grey')
+        self.tree.tag_configure('dir', foreground='orange')
 
         # Создание кнопки "Назад"
         self.back_button = ttk.Button(self, text="Назад", command=self.go_back)
@@ -97,16 +106,17 @@ class MainWindow(tk.Tk):
         self.populate_tree()
 
     def populate_tree(self, directory=''):
-        self.tree.delete(*self.tree.get_children())  # Очистка дерева
-        self.ftp_client.change_directory(directory)  # Переход в директорию
-        files = self.ftp_client.list_files()
+        # ...
+        files_and_dirs = self.ftp_client.list_files_and_dirs()
 
-        for file in files:
-            self.tree.insert('', 'end', text=file, values=(file,))
-        
-        # Обновление поля ввода текущего пути
-        self.path_entry.delete(0, tk.END)
-        self.path_entry.insert(0, self.ftp_client.get_current_directory())
+        for entry in files_and_dirs:
+            details, name = entry.split('; ', 1)
+            details = details.split(';')
+            type_ = next((item.split('=')[1] for item in details if item.startswith('type')), None)
+            if type_ == 'file':
+                self.tree.insert('', 'end', text=name, values=(name,), tags=('file',))
+            elif type_ == 'dir':
+                self.tree.insert('', 'end', text=name, values=(name,), tags=('dir',))
 
     def go_to_directory(self):
         path = self.path_entry.get()  # Получение пути из поля ввода
