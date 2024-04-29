@@ -40,6 +40,12 @@ class FTPClient:
     def create_file(self, filename):
         self.ftp.storbinary('STOR ' + filename, io.BytesIO())
 
+    def delete_file_or_directory(self, name):
+        try:
+            self.ftp.delete(name)  # Попытка удалить как файл
+        except:
+            self.ftp.rmd(name)  # Если не удалось, попытка удалить как директорию
+
     def close(self):
         self.ftp.quit()
 
@@ -82,6 +88,11 @@ class MainWindow(tk.Tk):
 
         self.refresh_button = ttk.Button(self, text="Обновить", command=self.populate_tree)
         self.refresh_button.pack(side=tk.LEFT)
+
+        self.context_menu = tk.Menu(self, tearoff=0)
+        self.context_menu.add_command(label="Удалить", command=self.delete_file_or_directory)
+
+        self.tree.bind("<Button-3>", self.show_context_menu)
 
         self.populate_tree()
 
@@ -151,6 +162,22 @@ class MainWindow(tk.Tk):
             except Exception as e:
                 print(f"Failed to create file: {e}")
                 tkinter.messagebox.showerror("Ошибка", f"Не удалось создать файл: {e}")
+
+    def show_context_menu(self, event):
+        # Отображение контекстного меню
+        self.context_menu.post(event.x_root, event.y_root)
+
+    def delete_file_or_directory(self):
+        selected_item = self.tree.selection()[0]  # Получение выбранного элемента
+        name = self.tree.item(selected_item)['text']  # Получение имени файла или папки
+
+        try:
+            self.ftp_client.delete_file_or_directory(name)  # Удаление файла или папки
+            tkinter.messagebox.showinfo("Успех", f"{name} успешно удален")
+            self.populate_tree()  # Обновление дерева файлов
+        except Exception as e:
+            print(f"Failed to delete {name}: {e}")
+            tkinter.messagebox.showerror("Ошибка", f"Не удалось удалить {name}: {e}")
 
 class LoginWindow(tk.Toplevel):
     def __init__(self, parent):
