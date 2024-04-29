@@ -4,6 +4,7 @@ from ftplib import FTP
 import tkinter.messagebox
 import tkinter.filedialog
 import os
+import io
 
 class FTPClient:
     def __init__(self, host, port, username, password):
@@ -35,6 +36,9 @@ class FTPClient:
 
     def create_directory(self, directory_name):
         self.ftp.mkd(directory_name)
+
+    def create_file(self, filename):
+        self.ftp.storbinary('STOR ' + filename, io.BytesIO())
 
     def close(self):
         self.ftp.quit()
@@ -72,6 +76,9 @@ class MainWindow(tk.Tk):
 
         self.create_dir_button = ttk.Button(self, text="Создать папку", command=self.create_directory)
         self.create_dir_button.pack(side=tk.LEFT)
+
+        self.create_file_button = ttk.Button(self, text="Создать файл", command=self.create_file)
+        self.create_file_button.pack(side=tk.LEFT)
 
         self.refresh_button = ttk.Button(self, text="Обновить", command=self.populate_tree)
         self.refresh_button.pack(side=tk.LEFT)
@@ -133,6 +140,17 @@ class MainWindow(tk.Tk):
             except Exception as e:
                 print(f"Failed to create directory: {e}")
                 tkinter.messagebox.showerror("Ошибка", f"Не удалось создать папку: {e}")
+
+    def create_file(self):
+        filename = tkinter.simpledialog.askstring("Создать файл", "Введите имя файла:")
+        if filename:  # Если пользователь ввел имя файла
+            try:
+                self.ftp_client.create_file(filename)  # Создание файла
+                tkinter.messagebox.showinfo("Успех", f"Файл {filename} успешно создан")
+                self.populate_tree()  # Обновление дерева файлов
+            except Exception as e:
+                print(f"Failed to create file: {e}")
+                tkinter.messagebox.showerror("Ошибка", f"Не удалось создать файл: {e}")
 
 class LoginWindow(tk.Toplevel):
     def __init__(self, parent):
