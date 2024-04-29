@@ -73,6 +73,9 @@ class MainWindow(tk.Tk):
         self.create_dir_button = ttk.Button(self, text="Создать папку", command=self.create_directory)
         self.create_dir_button.pack(side=tk.LEFT)
 
+        self.refresh_button = ttk.Button(self, text="Обновить", command=self.populate_tree)
+        self.refresh_button.pack(side=tk.LEFT)
+
         self.populate_tree()
 
     def populate_tree(self, directory=''):
