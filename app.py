@@ -98,6 +98,9 @@ class MainWindow(tk.Tk):
         self.refresh_button = ttk.Button(self, text="Обновить", command=self.populate_tree)
         self.refresh_button.pack(side=tk.LEFT)
 
+        self.upload_button = ttk.Button(self, text="Загрузить", command=self.upload_file)
+        self.upload_button.pack(side=tk.LEFT)
+
         self.context_menu = tk.Menu(self, tearoff=0)
         self.context_menu.add_command(label="Удалить", command=self.delete_file_or_directory)
 
@@ -188,6 +191,17 @@ class MainWindow(tk.Tk):
         except Exception as e:
             print(f"Failed to delete {name}: {e}")
             tkinter.messagebox.showerror("Ошибка", f"Не удалось удалить {name}: {e}")
+
+    def upload_file(self):
+        filename = tkinter.filedialog.askopenfilename()  # Открытие диалога выбора файла
+        if filename:  # Если пользователь выбрал файл
+            try:
+                basename = os.path.basename(filename)  # Получение имени файла без пути
+                self.ftp_client.upload_file(basename, filename)  # Загрузка файла
+                tkinter.messagebox.showinfo("Upload successful", f"File {basename} uploaded successfully")
+            except Exception as e:
+                print(f"Failed to upload file: {e}")
+                tkinter.messagebox.showerror("Upload Error", f"Failed to upload file: {e}")
 
 class LoginWindow(tk.Toplevel):
     def __init__(self, parent):
