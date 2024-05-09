@@ -157,6 +157,18 @@ class MainWindow(tk.Tk):
                 print(f"Failed to download file: {e}")
                 tkinter.messagebox.showerror("Download Error", f"Failed to download file: {e}")
 
+    def download_directory(self):
+        selected_item = self.tree.selection()[0]  # Получение выбранного элемента
+        directory_name = self.tree.item(selected_item)['text']  # Получение имени директории
+        download_dir = tkinter.filedialog.askdirectory()  # Открытие диалога выбора директории
+        if download_dir:  # Если пользователь выбрал директорию
+            try:
+                self.ftp_client.download_directory(directory_name, download_dir)  # Скачивание директории
+                tkinter.messagebox.showinfo("Download successful", f"Directory {directory_name} downloaded successfully")
+            except Exception as e:
+                print(f"Failed to download directory: {e}")
+                tkinter.messagebox.showerror("Download Error", f"Failed to download directory: {e}")
+
     def create_directory(self):
         directory_name = tkinter.simpledialog.askstring("Создать папку", "Введите имя папки:")
         if directory_name:  # Если пользователь ввел имя папки
@@ -189,11 +201,13 @@ class MainWindow(tk.Tk):
             # Если выбран файл, добавляем определенные пункты меню
             self.context_menu.add_command(label="Удалить", command=self.delete_file_or_directory)
             self.context_menu.add_command(label="Информация", command=self.show_file_info)
+            self.context_menu.add_command(label="Скачать файл", command=self.download_file)
 
         elif 'dir' in item_tags:
             # Если выбрана папка, добавляем другие пункты меню
             self.context_menu.add_command(label="Удалить", command=self.delete_file_or_directory)
             self.context_menu.add_command(label="Перейти в папку", command=self.go_to_selected_directory)
+            self.context_menu.add_command(label="Скачать папку", command=self.download_directory)
 
         # Отображение контекстного меню
         self.context_menu.post(event.x_root, event.y_root)

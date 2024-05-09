@@ -11,6 +11,9 @@ class FTPClient:
     def change_directory(self, path):
         self.ftp.cwd(path)
 
+    def rename(self, old_name, new_name):
+        self.ftp.rename(old_name, new_name)
+
     def list_files(self):
         return self.ftp.nlst()
 
@@ -22,6 +25,38 @@ class FTPClient:
 
         with open(local_filename, 'wb') as f:
             self.ftp.retrbinary('RETR ' + filename, f.write)
+
+    def is_directory(self, name):
+        current = self.ftp.pwd()  # сохраняем текущую директорию
+        try:
+            self.ftp.cwd(name)  # пытаемся перейти в директорию
+            self.ftp.cwd(current)  # возвращаемся обратно
+            return True
+        except Exception as e:
+            return False
+    
+    def download_directory(self, directory, local_directory):
+        try:
+            if not os.path.exists(local_directory):  # Проверяем, существует ли уже директория
+                os.mkdir(local_directory)  # Создаем локальную папку
+        except OSError:
+            pass
+
+        self.ftp.cwd(directory)  # Переходим в папку на FTP сервере
+
+        items = self.ftp.nlst()  # Получаем список файлов и папок
+
+        for item in items:
+            if item == '.DS_Store':  # Пропускаем файлы .DS_Store
+                continue
+            local_path = os.path.join(local_directory, item)
+            if self.is_directory(item):  # Если это папка, скачиваем ее рекурсивно
+                self.download_directory(item, local_path)
+            else:  # Если это файл, скачиваем его
+                self.download_file(item, local_directory)  # Исправлено здесь
+
+        self.ftp.cwd("..")  # Возвращаемся назад
+
 
     def upload_file(self, filename, local_filename=None):
         if local_filename is None:
