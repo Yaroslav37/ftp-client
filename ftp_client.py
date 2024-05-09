@@ -64,3 +64,31 @@ class FTPClient:
 
     def close(self):
         self.ftp.quit()
+
+    def get_file_info(self, filename):
+        try:
+            if filename in self.ftp.nlst():  # Если filename является папкой
+                return f"Имя каталога: {filename}\nТип: папка"
+            
+            response = []
+            self.ftp.retrlines('LIST ' + filename, response.append)
+            file_info = response[0] if response else None
+
+            if file_info:
+                parts = file_info.split()
+                file_type = parts[0][0]  # Тип файла
+                name = parts[-1]  # Имя файла
+
+                if file_type == 'd':  # Если это каталог
+                    return f"Имя каталога: {name}\nТип: папка"
+                else:
+                    size = parts[4]  # Размер файла
+                    modified_date = ' '.join(parts[5:8])  # Дата последней модификации
+                    file_format = name.split('.')[-1] if '.' in name else ''  # Формат файла
+                    return f"Имя файла: {name}\nФормат: {file_format}\nРазмер: {size} байт\nДата изменения: {modified_date}"
+            else:
+                return None
+        except Exception as e:
+            print(f"Failed to get file info: {e}")
+            return None
+        

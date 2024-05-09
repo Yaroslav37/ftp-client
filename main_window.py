@@ -3,6 +3,7 @@ from tkinter import ttk
 import tkinter.messagebox
 import tkinter.filedialog
 from ftp_client import FTPClient
+import os
 
 class MainWindow(tk.Tk):
     def __init__(self, ftp_client):
@@ -13,6 +14,21 @@ class MainWindow(tk.Tk):
 
         self.ftp_client = ftp_client
 
+        # Создание поля ввода для поиска
+        self.search_entry = tk.Entry(self)
+        self.search_entry.pack(side=tk.TOP, fill=tk.X)
+
+        # Создание кнопки для поиска
+        self.search_button = ttk.Button(self, text="Поиск", command=self.search)
+        self.search_button.pack(side=tk.TOP, fill=tk.X)
+
+        # Создание дерева
+        self.tree = ttk.Treeview(self)
+        self.tree.pack(fill=tk.BOTH, expand=1)
+
+        self.tree.tag_configure('file', foreground='grey')
+        self.tree.tag_configure('dir', foreground='orange')
+
         # Создание поля ввода для отображения и изменения текущего пути
         self.path_entry = tk.Entry(self)
         self.path_entry.pack(side=tk.LEFT)
@@ -20,12 +36,6 @@ class MainWindow(tk.Tk):
         # Создание кнопки для перехода по пути
         self.go_button = ttk.Button(self, text="Перейти", command=self.go_to_directory)
         self.go_button.pack(side=tk.LEFT)
-
-        self.tree = ttk.Treeview(self)
-        self.tree.pack(fill=tk.BOTH, expand=1)
-
-        self.tree.tag_configure('file', foreground='grey')
-        self.tree.tag_configure('dir', foreground='orange')
 
         # Создание кнопки "Назад"
         self.back_button = ttk.Button(self, text="Назад", command=self.go_back)
@@ -54,11 +64,51 @@ class MainWindow(tk.Tk):
         self.context_menu.add_command(label="Удалить", command=self.delete_file_or_directory)
 
         self.tree.bind("<Button-3>", self.show_context_menu)
+        self.context_menu.add_command(label="Информация", command=self.show_file_info) 
 
         self.populate_tree()
 
+    def show_file_info(self):
+        selected_item = self.tree.selection()[0]  # Получение выбранного элемента
+        filename = self.tree.item(selected_item)['text']  # Получение имени файла
+        try:
+            file_info = self.ftp_client.get_file_info(filename)  # Получение информации о файле
+            tkinter.messagebox.showinfo("Информация о файле", file_info)  # Отображение информации о файле в диалоговом окне
+        except Exception as e:
+            print(f"Failed to get file info: {e}")
+            tkinter.messagebox.showerror("Ошибка", f"Не удалось получить информацию о файле: {e}")
+
+    def search(self):
+        # Получаем текст из поля ввода
+        search_text = self.search_entry.get()
+
+        # Получаем список файлов и директорий
+        files_and_dirs = self.ftp_client.list_files_and_dirs()
+
+        # Ищем файлы и директории, которые содержат текст из поля ввода
+        matching_files_and_dirs = [f for f in files_and_dirs if search_text in f]
+
+        # Очищаем дерево
+        for i in self.tree.get_children():
+            self.tree.delete(i)
+
+        # Заполняем дерево найденными файлами и директориями
+        for entry in matching_files_and_dirs:
+            details, name = entry.split('; ', 1)
+            details = details.split(';')
+            type_ = next((item.split('=')[1] for item in details if item.startswith('type')), None)
+            if type_ == 'file':
+                self.tree.insert('', 'end', text=name, values=(name,), tags=('file',))
+            elif type_ == 'dir':
+                self.tree.insert('', 'end', text=name, values=(name,), tags=('dir',))
+
     def populate_tree(self, directory=''):
-        # ...
+        self.tree.tag_configure('file', foreground='grey')
+        self.tree.tag_configure('dir', foreground='orange')
+        
+        for i in self.tree.get_children():
+            self.tree.delete(i)
+
         files_and_dirs = self.ftp_client.list_files_and_dirs()
 
         for entry in files_and_dirs:
@@ -69,6 +119,7 @@ class MainWindow(tk.Tk):
                 self.tree.insert('', 'end', text=name, values=(name,), tags=('file',))
             elif type_ == 'dir':
                 self.tree.insert('', 'end', text=name, values=(name,), tags=('dir',))
+
 
     def go_to_directory(self):
         path = self.path_entry.get()  # Получение пути из поля ввода
@@ -87,6 +138,7 @@ class MainWindow(tk.Tk):
         self.destroy()
 
     def edit_connection(self):
+        from login_window import LoginWindow
         self.ftp_client.close()
         self.destroy()
         login_window = LoginWindow(self.master)
