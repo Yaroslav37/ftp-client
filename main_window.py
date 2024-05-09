@@ -61,10 +61,12 @@ class MainWindow(tk.Tk):
         self.upload_button.pack(side=tk.LEFT)
 
         self.context_menu = tk.Menu(self, tearoff=0)
+
         self.context_menu.add_command(label="Удалить", command=self.delete_file_or_directory)
+        self.context_menu.add_command(label="Перейти в папку", command=self.go_to_selected_directory)
+        self.context_menu.add_command(label="Информация", command=self.show_file_info) 
 
         self.tree.bind("<Button-3>", self.show_context_menu)
-        self.context_menu.add_command(label="Информация", command=self.show_file_info) 
 
         self.populate_tree()
 
@@ -178,6 +180,21 @@ class MainWindow(tk.Tk):
                 tkinter.messagebox.showerror("Ошибка", f"Не удалось создать файл: {e}")
 
     def show_context_menu(self, event):
+        self.context_menu.delete(0, 'end')
+
+        selected_item = self.tree.selection()[0]  # Получение выбранного элемента
+        item_tags = self.tree.item(selected_item)['tags']  # Получение тегов элемента
+
+        if 'file' in item_tags:
+            # Если выбран файл, добавляем определенные пункты меню
+            self.context_menu.add_command(label="Удалить", command=self.delete_file_or_directory)
+            self.context_menu.add_command(label="Информация", command=self.show_file_info)
+
+        elif 'dir' in item_tags:
+            # Если выбрана папка, добавляем другие пункты меню
+            self.context_menu.add_command(label="Удалить", command=self.delete_file_or_directory)
+            self.context_menu.add_command(label="Перейти в папку", command=self.go_to_selected_directory)
+
         # Отображение контекстного меню
         self.context_menu.post(event.x_root, event.y_root)
 
@@ -203,3 +220,13 @@ class MainWindow(tk.Tk):
             except Exception as e:
                 print(f"Failed to upload file: {e}")
                 tkinter.messagebox.showerror("Upload Error", f"Failed to upload file: {e}")
+
+    def go_to_selected_directory(self):
+        selected_item = self.tree.selection()[0]  # Получение выбранного элемента
+        directory_name = self.tree.item(selected_item)['text']  # Получение имени папки
+        try:
+            self.ftp_client.change_directory(directory_name)  # Переход в папку
+            self.populate_tree(directory_name)  # Обновление дерева файлов
+        except Exception as e:
+            print(f"Failed to go to directory: {e}")
+            tkinter.messagebox.showerror("Ошибка", f"Не удалось перейти в папку: {e}")
