@@ -70,6 +70,19 @@ class MainWindow(tk.Tk):
 
         self.populate_tree()
 
+    def rename_file_or_directory(self):
+        selected_item = self.tree.selection()[0]  # Получение выбранного элемента
+        old_name = self.tree.item(selected_item)['text']  # Получение старого имени файла или директории
+        new_name = tkinter.simpledialog.askstring("Переименовать", "Введите новое имя:")
+        if new_name:  # Если пользователь ввел новое имя
+            try:
+                self.ftp_client.rename(old_name, new_name)  # Переименование файла или директории
+                tkinter.messagebox.showinfo("Успех", f"{old_name} успешно переименовано в {new_name}")
+                self.populate_tree()  # Обновление дерева файлов
+            except Exception as e:
+                print(f"Failed to rename: {e}")
+                tkinter.messagebox.showerror("Ошибка", f"Не удалось переименовать: {e}")
+
     def show_file_info(self):
         selected_item = self.tree.selection()[0]  # Получение выбранного элемента
         filename = self.tree.item(selected_item)['text']  # Получение имени файла
@@ -202,12 +215,14 @@ class MainWindow(tk.Tk):
             self.context_menu.add_command(label="Удалить", command=self.delete_file_or_directory)
             self.context_menu.add_command(label="Информация", command=self.show_file_info)
             self.context_menu.add_command(label="Скачать файл", command=self.download_file)
+            self.context_menu.add_command(label="Переименовать", command=self.rename_file_or_directory)  # Добавляем пункт "Переименовать"
 
         elif 'dir' in item_tags:
             # Если выбрана папка, добавляем другие пункты меню
             self.context_menu.add_command(label="Удалить", command=self.delete_file_or_directory)
             self.context_menu.add_command(label="Перейти в папку", command=self.go_to_selected_directory)
             self.context_menu.add_command(label="Скачать папку", command=self.download_directory)
+            self.context_menu.add_command(label="Переименовать", command=self.rename_file_or_directory)  # Добавляем пункт "Переименовать"
 
         # Отображение контекстного меню
         self.context_menu.post(event.x_root, event.y_root)
